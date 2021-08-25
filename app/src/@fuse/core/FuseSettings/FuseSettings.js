@@ -356,7 +356,7 @@ function FuseSettings(props) {
 					render={({ field: { onChange, value } }) => (
 						<FormControl component="fieldset" className={classes.formControl}>
 							<FormLabel component="legend" className="text-14">
-								Footer
+								
 							</FormLabel>
 							<ThemeSelect value={value} handleThemeChange={onChange} name="theme.footer" />
 						</FormControl>

@@ -41,5 +41,7 @@
   "currency":"SAR",
 	"pinToIpfs":"Pin to IPFS for 7 years",
 	"ethTran":"Ethereum Transactionc Fee",
-	"serFee":"Alamah Service Fee"
+	"serFee":"Alamah Service Fee",
+	"uploadtoEth": "Add To Ethereum",
+	"uploadEncToIpsf":"Upload Encrypted file to IPFS"
 }

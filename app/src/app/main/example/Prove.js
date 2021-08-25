@@ -104,7 +104,7 @@ function Prove() {
 	}, []);
 	const { getRootProps, getInputProps } = useDropzone({ onDrop });
 	const { ref, ...rootProps } = getRootProps();
-	const [tabValue, setTabValue] = useState(3);
+	const [tabValue, setTabValue] = useState(0);
 	const [uploadIcon, setUploadIcon] = useState('attach_file');
 
 	const generateKeys = () => {
@@ -157,11 +157,11 @@ function Prove() {
 	}, [getEncryptedContent, ipfsClient]);
 
 	const onAddToEthereum = useCallback(() => {
-		drizzle.contracts.TimestampFactory.methods.createTimestamp.cacheSend(signature, ipfsIdentifier, signature, {
+		drizzle.contracts.FootPrinter.methods.createFootPrint.cacheSend(ipfsIdentifier, signature, {
 			gas: 500000
 		});
 		console.log('yes')
-	}, [drizzle.contracts.TimestampFactory.methods, ipfsIdentifier, signature]);
+	}, [drizzle.contracts.FootPrinter.methods, ipfsIdentifier, signature]);
 	return (
 		<FormProvider {...methods} autoComplete="off">
 			<FusePageCarded
@@ -674,13 +674,16 @@ function Prove() {
 										)}
 
 										<Button
+											{...field}
+											className="mt-8 mb-16"
+											style={{ fontSize: '16px', height: '50px' }}
 											color="secondary"
 											variant="outlined"
 											disabled={!ipfsIdentifier}
 											fullWidth
 											onClick={onAddToEthereum}
 										>
-											Create timestamp
+												{t('uploadtoEth')}
 										</Button>
 									</>
 								)}

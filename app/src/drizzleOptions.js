@@ -1,5 +1,4 @@
-import IdentityService from './contracts/IdentityService.json';
-import TimestampFactory from './contracts/TimestampFactory.json';
+import FootPrinter from './contracts/FootPrinter.json';
 
 const options = {
 	web3: {
@@ -8,9 +7,9 @@ const options = {
 			url: 'ws://localhost:7545'
 		}
 	},
-	contracts: [IdentityService, TimestampFactory],
+	contracts: [FootPrinter],
 	events: {
-		TimestampFactory: ['NewTimestamp']
+		FootPrinter: ['NewFootPrint']
 	}
 };
 

@@ -33,7 +33,7 @@ const generateClassName = createGenerateClassName({ disableGlobal: true });
 const App = () => {
 	return (
 		<drizzleReactHooks.DrizzleProvider drizzle={drizzle}>
-			<drizzleReactHooks.Initializer error="There was an error.">
+			<drizzleReactHooks.Initializer error="Drizzle init error">
 				<IPFSProvider>
 					<AppContext.Provider
 						value={{
