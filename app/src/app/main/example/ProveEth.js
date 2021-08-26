@@ -25,10 +25,6 @@ import TableRow from '@material-ui/core/TableRow';
 import { Base64 } from 'js-base64';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { drizzleReactHooks } from '@drizzle/react-plugin';
-import axios from 'axios';
-import CardContent from '@material-ui/core/CardContent';
-import { motion } from 'framer-motion';
-import Card from '@material-ui/core/Card';
 
 import { IPFSContext } from '../../IPFSContext';
 
@@ -52,8 +48,6 @@ function Prove() {
 		fileExtension: yup.string().required(t('required'))
 	});
 	const [keys, setKeys] = useState();
-	const [transaction, setTransaction] = useState();
-
 	const [signature, setSignature] = useState();
 	const methods = useForm({
 		mode: 'onChange',
@@ -68,8 +62,6 @@ function Prove() {
 	});
 	const [file, setFile] = useState(undefined);
 	const [invoice, setInvoice] = useState();
-	const [ethSuccess, seethSuccess] = useState(false);
-
 	const generateInvoice = () => {
 		const services = [
 			{
@@ -112,7 +104,7 @@ function Prove() {
 	}, []);
 	const { getRootProps, getInputProps } = useDropzone({ onDrop });
 	const { ref, ...rootProps } = getRootProps();
-	const [tabValue, setTabValue] = useState(3);
+	const [tabValue, setTabValue] = useState(0);
 	const [uploadIcon, setUploadIcon] = useState('attach_file');
 
 	const generateKeys = () => {
@@ -151,39 +143,24 @@ function Prove() {
 		const encryptedContent = await getEncryptedContent();
 
 		if (encryptedContent) {
-			// eslint-disable-next-line no-restricted-syntax
-			//	for await (const result of ipfsClient.add(encryptedContent)) {
-			//		setIPFSIdentifier(result.path);
-			//	}
-
-			axios
-				.post('http://localhost:3004/IPFS', { file: encryptedContent })
-				.then(function (response) {
-					console.log('response');
-					setIPFSIdentifier(response.data.ipfs);
-
-					setLoading(true);
-				})
-				.catch(function (error) {
-					console.log(error);
-				})
+			const f = async () => {
+				// eslint-disable-next-line no-restricted-syntax
+				for await (const result of ipfsClient.add(encryptedContent)) {
+					setIPFSIdentifier(result.path);
+				}
+			};
+			setLoading(true);
+			f()
+				.catch(console.error)
 				.finally(() => setLoading(false));
 		}
 	}, [getEncryptedContent, ipfsClient]);
 
 	const onAddToEthereum = useCallback(() => {
-		axios
-			.get('http://localhost:3004/CreatefootPrint', { params: { ipfs: ipfsIdentifier, signature } })
-			.then(function (response) {
-				console.log(response);
-				setLoading(true);
-				seethSuccess(true);
-				setTransaction(response.data);
-			})
-			.catch(function (error) {
-				console.log(error);
-			})
-			.finally(() => setLoading(false));
+		drizzle.contracts.FootPrinter.methods.createFootPrint.cacheSend(ipfsIdentifier, signature, {
+			gas: 500000
+		});
+		console.log('yes')
 	}, [drizzle.contracts.FootPrinter.methods, ipfsIdentifier, signature]);
 	return (
 		<FormProvider {...methods} autoComplete="off">
@@ -663,350 +640,51 @@ function Prove() {
 								control={methods.control}
 								render={({ field }) => (
 									<>
-										<>
-											<TextField
-												{...field}
-												className="mt-8 mb-16"
-												disabled
-												label={t('ipfsId')}
-												value={ipfsIdentifier}
-												id="uploadToIpfs"
-												variant="filled"
-												fullWidth
-												InputProps={{
-													style: { fontSize: '16px' }
-												}}
-												InputLabelProps={{
-													style: { fontSize: '16px', fontWeight: '500' }
-												}}
-												placeholder={t('privateKeyPlaceholder')}
-											/>
-											<Button
-												{...field}
-												className="mt-8 mb-16"
-												style={{ fontSize: '16px', height: '50px' }}
-												color="primary"
-												variant="outlined"
-												fullWidth
-												disabled={loading || !keys}
-												onClick={onUploadToIPFS}
-											>
-												{t('uploadEncToIpsf')}
-											</Button>
-											{loading && !ipfsIdentifier && (
-												<CircularProgress size={24} className={classes.buttonProgress} />
-											)}
-
-											<Button
-												{...field}
-												className="mt-8 mb-16"
-												style={{ fontSize: '16px', height: '50px' }}
-												color="secondary"
-												variant={!ethSuccess ? 'outlined' : 'contained'}
-												disabled={!ipfsIdentifier}
-												fullWidth
-												onClick={!ethSuccess ? onAddToEthereum : () => null}
-											>
-												{!ethSuccess ? t('uploadtoEth') : t('uploadedtoEth')}
-											</Button>
-										</>
-										{!ethSuccess && (
-											<div style={{ display: 'flex', justifyContent: 'center', margin: '30px' }}>
-												<div className={clsx(classes.root)}>
-													{invoice && (
-														<motion.div
-															initial={{ opacity: 0, y: 200 }}
-															animate={{ opacity: 1, y: 0 }}
-															transition={{ bounceDamping: 0 }}
-														>
-															<Card className="mx-auto w-xl print:w-full print:shadow-none rounded-none sm:rounded-20">
-																<CardContent className="p-88 print:p-0">
-																	<div className="flex flex-row justify-between items-start">
-																		<div className="flex flex-col">
-																			<div className="flex items-center mb-80 print:mb-0">
-																				<img
-																					className="w-160 print:w-60"
-																					src="assets/images/logos/alamahLogo.png"
-																					alt="logo"
-																				/>
-
-																				<div
-																					className={clsx(
-																						classes.divider,
-																						'mx-48 w-px h-128 print:mx-16'
-																					)}
-																				/>
-
-																				<div className="max-w-160">
-																					<Typography color="textSecondary">
-																						title
-																					</Typography>
-																					<Typography color="textSecondary">
-																						{t('invoicePhone')}
-																					</Typography>
-
-																					<Typography color="textSecondary">
-																						{t('invoiceEmail')}
-																					</Typography>
-
-																					<Typography color="textSecondary">
-																						{t('invoiceWeb')}
-																					</Typography>
-																				</div>
-																			</div>
-
-																			<div className="flex items-center">
-																				<div className="flex justify-end items-center w-160 print:w-60">
-																					<Typography
-																						variant="h5"
-																						className="font-light print:text-16"
-																						color="textSecondary"
-																					>
-																						{t('invoiceclient')}
-																					</Typography>
-																				</div>
-
-																				<div
-																					className={clsx(
-																						classes.divider,
-																						'mx-48 w-px h-128 print:mx-16'
-																					)}
-																				/>
-
-																				<div className="max-w-160">
-																					<Typography color="textSecondary">
-																						<span>{t('retriveFile')}</span>
-																					</Typography>
-																					<Typography color="textSecondary">
-																						<span>{t('publickey')}</span>
-																					</Typography>
-
-																					<Typography color="textSecondary">
-																						<span>{t('encUrl')}</span>
-																					</Typography>
-
-																					<Typography color="textSecondary">
-																						<span>
-																							{t('transactionHash')}
-																						</span>
-																					</Typography>
-
-																					<Typography color="textSecondary">
-																						<span>{t('blockHash')}</span>
-																					</Typography>
-
-																					<Typography color="textSecondary">
-																						<span>{t('blockNumber')}</span>
-																					</Typography>
-																				</div>
-																			</div>
-																		</div>
-
-																		<table>
-																			<tbody>
-																				<tr>
-																					<td className="pb-32">
-																						<Typography
-																							className="font-light"
-																							variant="h4"
-																							color="textSecondary"
-																						>
-																							{t('invoiceTitle')}
-																						</Typography>
-																					</td>
-																					<td className="pb-32 px-16">
-																						<Typography
-																							className="font-light"
-																							variant="h4"
-																						>
-																							{t('invoicesubTitle')}
-																						</Typography>
-																					</td>
-																				</tr>
-
-																				<tr>
-																					<td className="text-right">
-																						<Typography color="textSecondary">
-																							{t('invoiceDate')}
-																						</Typography>
-																					</td>
-																					<td className="px-16">
-																						<Typography>date</Typography>
-																					</td>
-																				</tr>
-
-																				<tr>
-																					<td className="text-right">
-																						<Typography color="textSecondary">
-																							{t('invoiceTotal')}
-																						</Typography>
-																					</td>
-																					<td className="px-16">
-																						<Typography>
-																							{formatter.format(123)}
-																						</Typography>
-																					</td>
-																				</tr>
-																			</tbody>
-																		</table>
-																	</div>
-
-																	<div className="mt-96 print:mt-0">
-																		<Table className="simple">
-																			<TableHead>
-																				<TableRow>
-																					<TableCell>
-																						{t('service')}
-																					</TableCell>
-																					<TableCell>{t('unit')}</TableCell>
-																					<TableCell align="right">
-																						{t('unitPrice')}
-																					</TableCell>
-																					<TableCell align="right">
-																						{t('quantity')}
-																					</TableCell>
-																					<TableCell align="right">
-																						{t('total')}
-																					</TableCell>
-																				</TableRow>
-																			</TableHead>
-																			<TableBody>
-																				{invoice.services.map(service => (
-																					<TableRow key={service.title}>
-																						<TableCell>
-																							<Typography
-																								className="mb-8"
-																								variant="subtitle1"
-																							>
-																								{service.title}
-																							</Typography>
-																							<Typography
-																								variant="caption"
-																								color="textSecondary"
-																							>
-																								service.detail
-																							</Typography>
-																						</TableCell>
-																						<TableCell>
-																							{service.unit}
-																						</TableCell>
-																						<TableCell align="right">
-																							{formatter.format(
-																								service.unitPrice
-																							)}
-																						</TableCell>
-																						<TableCell align="right">
-																							{service.quantity}
-																						</TableCell>
-																						<TableCell align="right">
-																							{formatter.format(
-																								service.total
-																							)}
-																						</TableCell>
-																					</TableRow>
-																				))}
-																			</TableBody>
-																		</Table>
-
-																		<Table className="simple">
-																			<TableBody>
-																				<TableRow>
-																					<TableCell>
-																						<Typography
-																							className="font-normal"
-																							variant="subtitle1"
-																							color="textSecondary"
-																						>
-																							{t('subTotal')}
-																						</Typography>
-																					</TableCell>
-																					<TableCell align="right">
-																						<Typography
-																							className="font-normal"
-																							variant="subtitle1"
-																							color="textSecondary"
-																						>
-																							{formatter.format(
-																								invoice.subtotal
-																							)}
-																						</Typography>
-																					</TableCell>
-																				</TableRow>
-																				<TableRow>
-																					<TableCell>
-																						<Typography
-																							className="font-normal"
-																							variant="subtitle1"
-																							color="textSecondary"
-																						>
-																							{t('vat')}
-																						</Typography>
-																					</TableCell>
-																					<TableCell align="right">
-																						<Typography
-																							className="font-normal"
-																							variant="subtitle1"
-																							color="textSecondary"
-																						>
-																							{formatter.format(
-																								invoice.tax
-																							)}
-																						</Typography>
-																					</TableCell>
-																				</TableRow>
-
-																				<TableRow>
-																					<TableCell>
-																						<Typography
-																							className="font-light"
-																							variant="h4"
-																							color="textSecondary"
-																						>
-																							{t('total')}
-																						</Typography>
-																					</TableCell>
-																					<TableCell align="right">
-																						<Typography
-																							className="font-light"
-																							variant="h4"
-																							color="textSecondary"
-																						>
-																							{formatter.format(
-																								invoice.total
-																							)}
-																						</Typography>
-																					</TableCell>
-																				</TableRow>
-																			</TableBody>
-																		</Table>
-																	</div>
-
-																	<div className="mt-96 print:mt-0 print:px-16">
-																		<div className="flex">
-																			<div className="flex-shrink-0">
-																				<img
-																					className="w-32"
-																					src="assets/images/logos/alamahLogo.png"
-																					alt="logo"
-																				/>
-																			</div>
-
-																			<Typography
-																				className="font-normal mb-64 px-24"
-																				variant="caption"
-																				color="textSecondary"
-																			>
-																				{t('invoiceAlamah')}
-																			</Typography>
-																		</div>
-																	</div>
-																</CardContent>
-															</Card>
-														</motion.div>
-													)}
-												</div>
-											</div>
+										<TextField
+											{...field}
+											className="mt-8 mb-16"
+											disabled
+											label={t('ipfsId')}
+											value={ipfsIdentifier}
+											id="uploadToIpfs"
+											variant="filled"
+											fullWidth
+											InputProps={{
+												style: { fontSize: '16px' }
+											}}
+											InputLabelProps={{
+												style: { fontSize: '16px', fontWeight: '500' }
+											}}
+											placeholder={t('privateKeyPlaceholder')}
+										/>
+										<Button
+											{...field}
+											className="mt-8 mb-16"
+											style={{ fontSize: '16px', height: '50px' }}
+											color="primary"
+											variant="outlined"
+											fullWidth
+											disabled={loading || !keys}
+											onClick={onUploadToIPFS}
+										>
+											{t('uploadEncToIpsf')}
+										</Button>
+										{loading && !ipfsIdentifier && (
+											<CircularProgress size={24} className={classes.buttonProgress} />
 										)}
+
+										<Button
+											{...field}
+											className="mt-8 mb-16"
+											style={{ fontSize: '16px', height: '50px' }}
+											color="secondary"
+											variant="outlined"
+											disabled={!ipfsIdentifier}
+											fullWidth
+											onClick={onAddToEthereum}
+										>
+												{t('uploadtoEth')}
+										</Button>
 									</>
 								)}
 							/>

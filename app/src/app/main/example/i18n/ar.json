@@ -43,6 +43,23 @@
 	"ethTran":"رسوم حوالة الإيثيريوم",
 	"serFee":"رسوم خدمة علامة",
 	"uploadtoEth": "رفع المعلومات على الإيثيريوم",
-	"uploadEncToIpsf":"رفع الملف المشفر لشبكة IPFS"
+	"uploadEncToIpsf":"رفع الملف المشفر لشبكة IPFS",
+	"ipfsId": "IPFS معرف",
+	"uploadedtoEth":"تمت  العملية بنجاح !",
+	"invoiceTitle":"",
+	"invoiceAddress":"",
+	"invoicePhone":"",
+	"invoiceEmail":"",
+	"invoiceWeb":"",
+	"invoiceSignature":"",
+	"invoiceIpfs":"",
+	"invoicetransactionHash":"",
+	"invoiceblockHash":"",
+	"invoiceblockNumber":"",
+	"invoiceDuration":"",
+	"invoiceDate":"",
+	"invoiceTotal":"",
+	"invoiceAlamah":""
+
 }
 
