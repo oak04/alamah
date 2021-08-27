@@ -29,6 +29,8 @@ import axios from 'axios';
 import CardContent from '@material-ui/core/CardContent';
 import { motion } from 'framer-motion';
 import Card from '@material-ui/core/Card';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 import { IPFSContext } from '../../IPFSContext';
 
@@ -53,6 +55,28 @@ function Prove() {
 	});
 	const [keys, setKeys] = useState();
 	const [transaction, setTransaction] = useState();
+
+	const printDocument = () => {
+		let pdf;
+		let imgData;
+		let can;
+		html2canvas(document.querySelector('#capture'))
+			.then(canvas => {
+				// document.body.appendChild(canvas); // if you want see your screenshot in body.
+				imgData = canvas.toDataURL('image/png');
+				can = canvas;
+			})
+			.then(() => {
+				// eslint-disable-next-line new-cap
+				pdf = new jsPDF('p', 'pt', [can.width, can.height]);
+				const pdfWidth = pdf.internal.pageSize.getWidth();
+				const pdfHeight = pdf.internal.pageSize.getHeight();
+				pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+			})
+			.then(() => {
+				pdf.save('download.pdf');
+			});
+	};
 
 	const [signature, setSignature] = useState();
 	const methods = useForm({
@@ -112,7 +136,7 @@ function Prove() {
 	}, []);
 	const { getRootProps, getInputProps } = useDropzone({ onDrop });
 	const { ref, ...rootProps } = getRootProps();
-	const [tabValue, setTabValue] = useState(3);
+	const [tabValue, setTabValue] = useState(0);
 	const [uploadIcon, setUploadIcon] = useState('attach_file');
 
 	const generateKeys = () => {
@@ -136,7 +160,11 @@ function Prove() {
 	const [loading, setLoading] = useState(false);
 
 	const getEncryptedContent = useCallback(async () => {
-		const content = Base64.btoa(new Uint8Array(file));
+		let filecontent;
+file.arrayBuffer().then((contentBuffer) => {
+	filecontent=contentBuffer;
+  });
+		const content = Base64.btoa(new Uint8Array(filecontent));
 
 		// see https://github.com/pubkey/eth-crypto#encryptwithpublickey
 		const encryptedContentObject = await EthCrypto.encryptWithPublicKey(keys.pb, content);
@@ -200,7 +228,7 @@ function Prove() {
 							style={{ fontSize: '18px', height: '70px' }}
 							color="secondary"
 							variant="contained"
-							onClick={() => history.push('/')}
+							onClick={() => history.push('/wathyqe-eth')}
 						>
 							{t('useYourWallet')}
 						</Button>
@@ -710,10 +738,19 @@ function Prove() {
 												{!ethSuccess ? t('uploadtoEth') : t('uploadedtoEth')}
 											</Button>
 										</>
-										{!ethSuccess && (
-											<div style={{ display: 'flex', justifyContent: 'center', margin: '30px' }}>
+										{ethSuccess && (
+											<div
+												style={{
+													display: 'flex',
+													justifyContent: 'center',
+													margin: '30px',
+													width: '948px',
+													height: '1310px'
+												}}
+												id="capture"
+											>
 												<div className={clsx(classes.root)}>
-													{invoice && (
+													{true && (
 														<motion.div
 															initial={{ opacity: 0, y: 200 }}
 															animate={{ opacity: 1, y: 0 }}
@@ -721,266 +758,285 @@ function Prove() {
 														>
 															<Card className="mx-auto w-xl print:w-full print:shadow-none rounded-none sm:rounded-20">
 																<CardContent className="p-88 print:p-0">
-																	<div className="flex flex-row justify-between items-start">
-																		<div className="flex flex-col">
-																			<div className="flex items-center mb-80 print:mb-0">
-																				<img
-																					className="w-160 print:w-60"
-																					src="assets/images/logos/alamahLogo.png"
-																					alt="logo"
-																				/>
-
-																				<div
-																					className={clsx(
-																						classes.divider,
-																						'mx-48 w-px h-128 print:mx-16'
-																					)}
-																				/>
-
-																				<div className="max-w-160">
-																					<Typography color="textSecondary">
-																						title
-																					</Typography>
-																					<Typography color="textSecondary">
-																						{t('invoicePhone')}
-																					</Typography>
-
-																					<Typography color="textSecondary">
-																						{t('invoiceEmail')}
-																					</Typography>
-
-																					<Typography color="textSecondary">
-																						{t('invoiceWeb')}
-																					</Typography>
-																				</div>
-																			</div>
-
-																			<div className="flex items-center">
-																				<div className="flex justify-end items-center w-160 print:w-60">
-																					<Typography
-																						variant="h5"
-																						className="font-light print:text-16"
-																						color="textSecondary"
+																	<div className="flex">
+																		<img
+																			className="w-160 print:w-60"
+																			src="assets/images/logos/alamahLogo.png"
+																			alt="logo"
+																		/>
+																		<Typography
+																			className="font-light p-20 mt-40"
+																			variant="h4"
+																		>
+																			{t('invoicesubTitle')}
+																		</Typography>
+																		<Button color="primary" onClick={printDocument}>
+																			<Icon>print</Icon>
+																		</Button>
+																	</div>
+																	<div
+																		style={{
+																			display: 'flex',
+																			justifyContent: 'space-between',
+																			flexDirection: 'column'
+																		}}
+																	>
+																		<table
+																			style={{
+																				margin: '40px'
+																			}}
+																		>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('signature')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					{signature}
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('id')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					{transaction.blockNumber-16}
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('retriveFile')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					https://alamah.sa/tahakaq
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('privatekey')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					{keys.pr}
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('publicKey')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						wordWrap: 'break-word'
+																					}}
+																				>
+																					<span
+																						style={{
+																							width: '110px',
+																							wordBreak: 'break-all'
+																						}}
 																					>
-																						{t('invoiceclient')}
-																					</Typography>
-																				</div>
-
-																				<div
-																					className={clsx(
-																						classes.divider,
-																						'mx-48 w-px h-128 print:mx-16'
-																					)}
-																				/>
-
-																				<div className="max-w-160">
-																					<Typography color="textSecondary">
-																						<span>{t('retriveFile')}</span>
-																					</Typography>
-																					<Typography color="textSecondary">
-																						<span>{t('publickey')}</span>
-																					</Typography>
-
-																					<Typography color="textSecondary">
-																						<span>{t('encUrl')}</span>
-																					</Typography>
-
-																					<Typography color="textSecondary">
-																						<span>
-																							{t('transactionHash')}
-																						</span>
-																					</Typography>
-
-																					<Typography color="textSecondary">
-																						<span>{t('blockHash')}</span>
-																					</Typography>
-
-																					<Typography color="textSecondary">
-																						<span>{t('blockNumber')}</span>
-																					</Typography>
-																				</div>
-																			</div>
-																		</div>
-
-																		<table>
-																			<tbody>
-																				<tr>
-																					<td className="pb-32">
-																						<Typography
-																							className="font-light"
-																							variant="h4"
-																							color="textSecondary"
-																						>
-																							{t('invoiceTitle')}
-																						</Typography>
-																					</td>
-																					<td className="pb-32 px-16">
-																						<Typography
-																							className="font-light"
-																							variant="h4"
-																						>
-																							{t('invoicesubTitle')}
-																						</Typography>
-																					</td>
-																				</tr>
-
-																				<tr>
-																					<td className="text-right">
-																						<Typography color="textSecondary">
-																							{t('invoiceDate')}
-																						</Typography>
-																					</td>
-																					<td className="px-16">
-																						<Typography>date</Typography>
-																					</td>
-																				</tr>
-
-																				<tr>
-																					<td className="text-right">
-																						<Typography color="textSecondary">
-																							{t('invoiceTotal')}
-																						</Typography>
-																					</td>
-																					<td className="px-16">
-																						<Typography>
-																							{formatter.format(123)}
-																						</Typography>
-																					</td>
-																				</tr>
-																			</tbody>
+																						{keys.pb}
+																					</span>
+																				</td>
+																			</tr>
+																		</table>
+																		<table
+																			style={{
+																				margin: '40px'
+																			}}
+																		>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('encUrl')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					https://ipfs.io/ipfs/
+																					{ipfsIdentifier}
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('invoiceDate')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					aa
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('blockNumber')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					{transaction
+																						? transaction.blockNumber
+																						: ''}
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('blockHash')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					{transaction
+																						? transaction.blockHash
+																						: ''}
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('fileExtension')}
+																				</td> 
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					{file.name.split('.').pop()}
+																				</td>
+																			</tr>
 																		</table>
 																	</div>
-
-																	<div className="mt-96 print:mt-0">
-																		<Table className="simple">
-																			<TableHead>
-																				<TableRow>
-																					<TableCell>
-																						{t('service')}
-																					</TableCell>
-																					<TableCell>{t('unit')}</TableCell>
-																					<TableCell align="right">
-																						{t('unitPrice')}
-																					</TableCell>
-																					<TableCell align="right">
-																						{t('quantity')}
-																					</TableCell>
-																					<TableCell align="right">
-																						{t('total')}
-																					</TableCell>
-																				</TableRow>
-																			</TableHead>
-																			<TableBody>
-																				{invoice.services.map(service => (
-																					<TableRow key={service.title}>
-																						<TableCell>
-																							<Typography
-																								className="mb-8"
-																								variant="subtitle1"
-																							>
-																								{service.title}
-																							</Typography>
-																							<Typography
-																								variant="caption"
-																								color="textSecondary"
-																							>
-																								service.detail
-																							</Typography>
-																						</TableCell>
-																						<TableCell>
-																							{service.unit}
-																						</TableCell>
-																						<TableCell align="right">
-																							{formatter.format(
-																								service.unitPrice
-																							)}
-																						</TableCell>
-																						<TableCell align="right">
-																							{service.quantity}
-																						</TableCell>
-																						<TableCell align="right">
-																							{formatter.format(
-																								service.total
-																							)}
-																						</TableCell>
-																					</TableRow>
-																				))}
-																			</TableBody>
-																		</Table>
-
-																		<Table className="simple">
-																			<TableBody>
-																				<TableRow>
-																					<TableCell>
-																						<Typography
-																							className="font-normal"
-																							variant="subtitle1"
-																							color="textSecondary"
-																						>
-																							{t('subTotal')}
-																						</Typography>
-																					</TableCell>
-																					<TableCell align="right">
-																						<Typography
-																							className="font-normal"
-																							variant="subtitle1"
-																							color="textSecondary"
-																						>
-																							{formatter.format(
-																								invoice.subtotal
-																							)}
-																						</Typography>
-																					</TableCell>
-																				</TableRow>
-																				<TableRow>
-																					<TableCell>
-																						<Typography
-																							className="font-normal"
-																							variant="subtitle1"
-																							color="textSecondary"
-																						>
-																							{t('vat')}
-																						</Typography>
-																					</TableCell>
-																					<TableCell align="right">
-																						<Typography
-																							className="font-normal"
-																							variant="subtitle1"
-																							color="textSecondary"
-																						>
-																							{formatter.format(
-																								invoice.tax
-																							)}
-																						</Typography>
-																					</TableCell>
-																				</TableRow>
-
-																				<TableRow>
-																					<TableCell>
-																						<Typography
-																							className="font-light"
-																							variant="h4"
-																							color="textSecondary"
-																						>
-																							{t('total')}
-																						</Typography>
-																					</TableCell>
-																					<TableCell align="right">
-																						<Typography
-																							className="font-light"
-																							variant="h4"
-																							color="textSecondary"
-																						>
-																							{formatter.format(
-																								invoice.total
-																							)}
-																						</Typography>
-																					</TableCell>
-																				</TableRow>
-																			</TableBody>
-																		</Table>
-																	</div>
-
 																	<div className="mt-96 print:mt-0 print:px-16">
 																		<div className="flex">
 																			<div className="flex-shrink-0">

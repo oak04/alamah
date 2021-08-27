@@ -2,6 +2,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
+import { useHistory } from 'react-router-dom';
 
 const useStyles = makeStyles(theme => ({
 	root: {
@@ -27,13 +28,16 @@ const useStyles = makeStyles(theme => ({
 function Logo() {
 	const classes = useStyles();
 	const { t } = useTranslation();
+	const history = useHistory();
 
 	return (
 		<div className={clsx(classes.root, 'flex items-center')}>
-			<img className="logo-icon" src="assets/images/logos/alamahLogo.png" alt="logo" width="60px" />
-			<Typography className="text-28 pb-2 leading-none mx-12 font-medium logo-text" color="#50F2F2">
-				{t('alamah')}
-			</Typography>
+			<button type="button" style={{backgroundColor:'transparent'}} className={clsx(classes.root, 'flex items-center')} onClick={()=> history.push('/wathyqe')}>
+				<img className="logo-icon" src="assets/images/logos/alamahLogo.png" alt="logo" width="60px" />
+				<Typography className="text-28 pb-2 leading-none mx-12 font-medium logo-text" color="#50F2F2">
+					{t('alamah')}
+				</Typography>
+			</button>
 		</div>
 	);
 }

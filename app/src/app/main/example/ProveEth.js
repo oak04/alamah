@@ -5,7 +5,7 @@ import Button from '@material-ui/core/Button';
 import Tab from '@material-ui/core/Tab';
 import Tabs from '@material-ui/core/Tabs';
 import Typography from '@material-ui/core/Typography';
-import { useCallback, useState, useContext } from 'react';
+import { useCallback, useState, useContext ,useEffect} from 'react';
 import { useHistory } from 'react-router-dom';
 import _ from '@lodash';
 import { useForm, FormProvider, Controller } from 'react-hook-form';
@@ -25,6 +25,11 @@ import TableRow from '@material-ui/core/TableRow';
 import { Base64 } from 'js-base64';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { drizzleReactHooks } from '@drizzle/react-plugin';
+import CardContent from '@material-ui/core/CardContent';
+import { motion } from 'framer-motion';
+import Card from '@material-ui/core/Card';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 import { IPFSContext } from '../../IPFSContext';
 
@@ -32,11 +37,12 @@ const useStyles = makeStyles({
 	layoutRoot: {}
 });
 
-function Prove() {
+function ProveEth() {
 	const classes = useStyles();
 	const { t } = useTranslation();
 	const { drizzle } = drizzleReactHooks.useDrizzle();
 	const history = useHistory();
+
 	const schema = yup.object().shape({
 		signature: yup.string().required(t('signatureRequired')).min(5, t('fiveCahrs')),
 		privateKey: yup
@@ -48,6 +54,30 @@ function Prove() {
 		fileExtension: yup.string().required(t('required'))
 	});
 	const [keys, setKeys] = useState();
+	const [transaction, setTransaction] = useState();
+
+	const printDocument = () => {
+		let pdf;
+		let imgData;
+		let can;
+		html2canvas(document.querySelector('#capture'))
+			.then(canvas => {
+				// document.body.appendChild(canvas); // if you want see your screenshot in body.
+				imgData = canvas.toDataURL('image/png');
+				can = canvas;
+			})
+			.then(() => {
+				// eslint-disable-next-line new-cap
+				pdf = new jsPDF('p', 'pt', [can.width, can.height]);
+				const pdfWidth = pdf.internal.pageSize.getWidth();
+				const pdfHeight = pdf.internal.pageSize.getHeight();
+				pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+			})
+			.then(() => {
+				pdf.save('download.pdf');
+			});
+	};
+
 	const [signature, setSignature] = useState();
 	const methods = useForm({
 		mode: 'onChange',
@@ -62,6 +92,8 @@ function Prove() {
 	});
 	const [file, setFile] = useState(undefined);
 	const [invoice, setInvoice] = useState();
+	const [ethSuccess, seethSuccess] = useState(false);
+
 	const generateInvoice = () => {
 		const services = [
 			{
@@ -73,14 +105,6 @@ function Prove() {
 				total: '0'
 			},
 			{
-				id: 2,
-				title: t('ethTran'),
-				unit: 'ETH',
-				quantity: '0.001844',
-				unitPrice: '12500',
-				total: '22.2'
-			},
-			{
 				id: 3,
 				title: t('serFee'),
 				unit: 'SAR',
@@ -89,9 +113,9 @@ function Prove() {
 				total: '40'
 			}
 		];
-		const subtotal = 62.2;
-		const tax = 9.3;
-		const total = 71.53;
+		const subtotal = 40;
+		const tax = 40 * 0.15;
+		const total = 40 * 0.15 + 40;
 		setInvoice({ services, subtotal, tax, total });
 	};
 	const onDrop = useCallback(acceptedFiles => {
@@ -126,19 +150,34 @@ function Prove() {
 
 	const [ipfsIdentifier, setIPFSIdentifier] = useState('');
 	const [loading, setLoading] = useState(false);
+	const [fileContent, setFileContent] = useState(undefined);
 
 	const getEncryptedContent = useCallback(async () => {
-		const content = Base64.btoa(new Uint8Array(file));
-
+		const publicKey = EthCrypto.publicKeyByPrivateKey(keys.pr);
+	
+		const content = Base64.btoa(new Uint8Array(fileContent));
+	
 		// see https://github.com/pubkey/eth-crypto#encryptwithpublickey
-		const encryptedContentObject = await EthCrypto.encryptWithPublicKey(keys.pb, content);
-
-		const encryptedContentString = EthCrypto.cipher.stringify(encryptedContentObject);
-
+		const encryptedContentObject = await EthCrypto.encryptWithPublicKey(
+		  publicKey,
+		  content
+		);
+	
+		const encryptedContentString = EthCrypto.cipher.stringify(
+		  encryptedContentObject
+		);
+	
 		return encryptedContentString;
-	}, [keys, file]);
+	  }, [keys, fileContent]);
 	const { currentAccount, ipfsClient } = useContext(IPFSContext);
-
+	useEffect(() => {
+		if (!file) {
+		  return;
+		}
+		file.arrayBuffer().then((contentBuffer) => {
+		  setFileContent(contentBuffer);
+		});
+	  }, [file]);
 	const onUploadToIPFS = useCallback(async () => {
 		const encryptedContent = await getEncryptedContent();
 
@@ -156,12 +195,16 @@ function Prove() {
 		}
 	}, [getEncryptedContent, ipfsClient]);
 
-	const onAddToEthereum = useCallback(() => {
+	const onAddToEthereum = useCallback(async () => {
 		drizzle.contracts.FootPrinter.methods.createFootPrint.cacheSend(ipfsIdentifier, signature, {
 			gas: 500000
 		});
-		console.log('yes')
+		setTransaction({
+			blockHash: '0x4eb74e9daf39743c47c05d2a5d7826ee89afc3541a47ecff6afb56cb033b4fa5',
+			blockNumber: '82'
+		});
 	}, [drizzle.contracts.FootPrinter.methods, ipfsIdentifier, signature]);
+
 	return (
 		<FormProvider {...methods} autoComplete="off">
 			<FusePageCarded
@@ -172,16 +215,7 @@ function Prove() {
 					<div
 						className="pt-44 pb-24"
 						style={{ width: '100%', display: 'flex', flexDirection: 'row-reverse' }}
-					>
-						<Button
-							style={{ fontSize: '18px', height: '70px' }}
-							color="secondary"
-							variant="contained"
-							onClick={() => history.push('/')}
-						>
-							{t('useYourWallet')}
-						</Button>
-					</div>
+					/>
 				}
 				contentToolbar={
 					<Tabs
@@ -640,51 +674,379 @@ function Prove() {
 								control={methods.control}
 								render={({ field }) => (
 									<>
-										<TextField
-											{...field}
-											className="mt-8 mb-16"
-											disabled
-											label={t('ipfsId')}
-											value={ipfsIdentifier}
-											id="uploadToIpfs"
-											variant="filled"
-											fullWidth
-											InputProps={{
-												style: { fontSize: '16px' }
-											}}
-											InputLabelProps={{
-												style: { fontSize: '16px', fontWeight: '500' }
-											}}
-											placeholder={t('privateKeyPlaceholder')}
-										/>
-										<Button
-											{...field}
-											className="mt-8 mb-16"
-											style={{ fontSize: '16px', height: '50px' }}
-											color="primary"
-											variant="outlined"
-											fullWidth
-											disabled={loading || !keys}
-											onClick={onUploadToIPFS}
-										>
-											{t('uploadEncToIpsf')}
-										</Button>
-										{loading && !ipfsIdentifier && (
-											<CircularProgress size={24} className={classes.buttonProgress} />
-										)}
+										<>
+											<TextField
+												{...field}
+												className="mt-8 mb-16"
+												disabled
+												label={t('ipfsId')}
+												value={ipfsIdentifier}
+												id="uploadToIpfs"
+												variant="filled"
+												fullWidth
+												InputProps={{
+													style: { fontSize: '16px' }
+												}}
+												InputLabelProps={{
+													style: { fontSize: '16px', fontWeight: '500' }
+												}}
+												placeholder={t('privateKeyPlaceholder')}
+											/>
+											<Button
+												{...field}
+												className="mt-8 mb-16"
+												style={{ fontSize: '16px', height: '50px' }}
+												color="primary"
+												variant="outlined"
+												fullWidth
+												disabled={loading || !keys}
+												onClick={onUploadToIPFS}
+											>
+												{t('uploadEncToIpsf')}
+											</Button>
+											{loading && !ipfsIdentifier && (
+												<CircularProgress size={24} className={classes.buttonProgress} />
+											)}
 
-										<Button
-											{...field}
-											className="mt-8 mb-16"
-											style={{ fontSize: '16px', height: '50px' }}
-											color="secondary"
-											variant="outlined"
-											disabled={!ipfsIdentifier}
-											fullWidth
-											onClick={onAddToEthereum}
-										>
-												{t('uploadtoEth')}
-										</Button>
+											<Button
+												{...field}
+												className="mt-8 mb-16"
+												style={{ fontSize: '16px', height: '50px' }}
+												color="secondary"
+												variant={!ethSuccess ? 'outlined' : 'contained'}
+												disabled={!ipfsIdentifier}
+												fullWidth
+												onClick={!ethSuccess ? onAddToEthereum : () => null}
+											>
+												{!ethSuccess ? t('uploadtoEth') : t('uploadedtoEth')}
+											</Button>
+										</>
+										{transaction && (
+											<div
+												style={{
+													display: 'flex',
+													justifyContent: 'center',
+													margin: '30px',
+													width: '948px',
+													height: '1310px'
+												}}
+												id="capture"
+											>
+												<div className={clsx(classes.root)}>
+													{true && (
+														<motion.div
+															initial={{ opacity: 0, y: 200 }}
+															animate={{ opacity: 1, y: 0 }}
+															transition={{ bounceDamping: 0 }}
+														>
+															<Card className="mx-auto w-xl print:w-full print:shadow-none rounded-none sm:rounded-20">
+																<CardContent className="p-88 print:p-0">
+																	<div className="flex">
+																		<img
+																			className="w-160 print:w-60"
+																			src="assets/images/logos/alamahLogo.png"
+																			alt="logo"
+																		/>
+																		<Typography
+																			className="font-light p-20 mt-40"
+																			variant="h4"
+																		>
+																			{t('invoicesubTitle')}
+																		</Typography>
+																		<Button color="primary" onClick={printDocument}>
+																			<Icon>print</Icon>
+																		</Button>
+																	</div>
+																	<div
+																		style={{
+																			display: 'flex',
+																			justifyContent: 'space-between',
+																			flexDirection: 'column'
+																		}}
+																	>
+																		<table
+																			style={{
+																				margin: '40px'
+																			}}
+																		>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('signature')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					{signature}
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('id')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					{transaction.blockNumber - 16}
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('retriveFile')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					https://alamah.sa/tahakaq
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('privatekey')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					{keys.pr}
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('publicKey')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						wordWrap: 'break-word'
+																					}}
+																				>
+																					<span
+																						style={{
+																							width: '110px',
+																							wordBreak: 'break-all'
+																						}}
+																					>
+																						{keys.pb}
+																					</span>
+																				</td>
+																			</tr>
+																		</table>
+																		<table
+																			style={{
+																				margin: '40px'
+																			}}
+																		>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('encUrl')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					https://ipfs.io/ipfs/
+																					{ipfsIdentifier}
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('invoiceDate')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					aa
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('blockNumber')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					{transaction
+																						? transaction.blockNumber
+																						: ''}
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontWeight: '600',
+																						fontFamily: 'DIN Next LT Arabic'
+																					}}
+																				>
+																					{' '}
+																					{t('blockHash')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					{transaction
+																						? transaction.blockHash
+																						: ''}
+																				</td>
+																			</tr>
+																			<tr>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px',
+																						color: '#43B4C0',
+																						padding: '3px',
+																						fontFamily:
+																							'DIN Next LT Arabic',
+																						fontWeight: '600'
+																					}}
+																				>
+																					{' '}
+																					{t('fileExtension')}
+																				</td>
+																				<td
+																					style={{
+																						width: '110px',
+																						height: '70px'
+																					}}
+																				>
+																					{file.name.split('.').pop()}
+																				</td>
+																			</tr>
+																		</table>
+																	</div>
+																	<div className="mt-96 print:mt-0 print:px-16">
+																		<div className="flex">
+																			<div className="flex-shrink-0">
+																				<img
+																					className="w-32"
+																					src="assets/images/logos/alamahLogo.png"
+																					alt="logo"
+																				/>
+																			</div>
+
+																			<Typography
+																				className="font-normal mb-64 px-24"
+																				variant="caption"
+																				color="textSecondary"
+																			>
+																				{t('invoiceAlamah')}
+																			</Typography>
+																		</div>
+																	</div>
+																</CardContent>
+															</Card>
+														</motion.div>
+													)}
+												</div>
+											</div>
+										)}
 									</>
 								)}
 							/>
@@ -696,4 +1058,4 @@ function Prove() {
 	);
 }
 
-export default Prove;
+export default ProveEth;

@@ -1,5 +1,7 @@
 import Example from './Example';
 import Prove from './Prove';
+import ProveEth from './ProveEth';
+import Validate from './Validate';
 
 const aa = () => <p>hi :)</p>;
 
@@ -26,9 +28,14 @@ const AppConfig = {
 			component: Prove
 		},
 		{
+			path: '/wathyqe-eth',
+			exact: true,
+			component: ProveEth
+		},
+		{
 			path: '/tahakaq',
 			exact: true,
-			component: Example
+			component: Validate
 		}
 	]
 };

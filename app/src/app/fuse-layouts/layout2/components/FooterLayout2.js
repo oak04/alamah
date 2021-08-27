@@ -6,10 +6,11 @@ import clsx from 'clsx';
 import { memo } from 'react';
 import { useSelector } from 'react-redux';
 import { selectFooterTheme } from 'app/store/fuse/settingsSlice';
+import { useTranslation } from 'react-i18next';
 
 function FooterLayout2(props) {
 	const footerTheme = useSelector(selectFooterTheme);
-
+	const { t } = useTranslation();
 	return (
 		<ThemeProvider theme={footerTheme}>
 			<AppBar
@@ -19,7 +20,7 @@ function FooterLayout2(props) {
 				style={{ backgroundColor: footerTheme.palette.background.paper }}
 			>
 				<Toolbar className="container min-h-48 md:min-h-64 px-8 sm:px-12 py-0 flex items-center overflow-x-auto">
-					<Typography>Footer</Typography>
+					<Typography>© {t('copyright')} </Typography>
 				</Toolbar>
 			</AppBar>
 		</ThemeProvider>

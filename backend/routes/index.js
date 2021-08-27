@@ -1,11 +1,12 @@
+/* eslint-disable no-undef */
+/* eslint-disable max-len */
 /* eslint-disable new-cap */
 /* eslint-disable no-unused-vars */
 import { Router } from 'express';
 var Contract = require('web3-eth-contract');
 const router = Router();
 var Web3 = require('web3');
-import { Web3Storage } from 'web3.storage';
-import { File } from 'web3.storage';
+import { Web3Storage, File } from 'web3.storage';
 
 
 router.get('/CreatefootPrint', async(req, res) => {
@@ -14,7 +15,7 @@ router.get('/CreatefootPrint', async(req, res) => {
   const account = web3.eth.accounts.privateKeyToAccount('4ec9ca2007da3113c7799bbfc7c5e170cec724e06797a89e98edc2d7382ffeec', [ true ]);
 
 
-  var contract = new Contract([
+  const contract = new Contract([
     {
       'anonymous': false,
       'inputs': [
@@ -172,8 +173,8 @@ router.get('/CreatefootPrint', async(req, res) => {
       response = e;
     });
   res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3002');
-
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+console.log(response)
   res.json({ transactionHash: response.transactionHash, blockHash: response.blockHash, blockNumber: response .blockNumber });
 });
 
@@ -192,7 +193,7 @@ router.post('/IPFS', async(req, res) => {
   const cid = await storage.put(files);
   console.log(`cid ${cid}`);
   res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3002');
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
 
   res.json({ ipfs: cid });
 });
