@@ -1,0 +1,24 @@
+{
+  "files": {
+    "main.css": "/alamah/static/css/main.f8f38abb.chunk.css",
+    "main.js": "/alamah/static/js/main.4c2a5dc4.chunk.js",
+    "runtime-main.js": "/alamah/static/js/runtime-main.6229c10a.js",
+    "static/css/2.27a78d87.chunk.css": "/alamah/static/css/2.27a78d87.chunk.css",
+    "static/js/2.424fd742.chunk.js": "/alamah/static/js/2.424fd742.chunk.js",
+    "static/js/3.ec742020.chunk.js": "/alamah/static/js/3.ec742020.chunk.js",
+    "static/js/4.6bd92b61.chunk.js": "/alamah/static/js/4.6bd92b61.chunk.js",
+    "static/js/5.63e8a012.chunk.js": "/alamah/static/js/5.63e8a012.chunk.js",
+    "index.html": "/alamah/index.html",
+    "static/js/2.424fd742.chunk.js.LICENSE.txt": "/alamah/static/js/2.424fd742.chunk.js.LICENSE.txt",
+    "static/js/3.ec742020.chunk.js.LICENSE.txt": "/alamah/static/js/3.ec742020.chunk.js.LICENSE.txt",
+    "static/js/4.6bd92b61.chunk.js.LICENSE.txt": "/alamah/static/js/4.6bd92b61.chunk.js.LICENSE.txt",
+    "static/media/index.css": "/alamah/static/media/poppins-latin-900italic.babad407.woff2"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.6229c10a.js",
+    "static/css/2.27a78d87.chunk.css",
+    "static/js/2.424fd742.chunk.js",
+    "static/css/main.f8f38abb.chunk.css",
+    "static/js/main.4c2a5dc4.chunk.js"
+  ]
+}
